@@ -1,0 +1,457 @@
+package com.javashop.admin.product;
+import java.awt.BorderLayout;
+import java.awt.Canvas;
+import java.awt.Choice;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+
+import com.javashop.admin.Main;
+import com.javashop.util.StringUtil;
+
+public class ProductMain extends JPanel{
+	Main main;
+	JPanel p_west; //등록폼 영역
+	JPanel p_east;//상세보기 영역
+	Choice ch_top;//상위 카테고리 
+	Choice ch_sub;//하위 카테고리 
+	JTextField t_name;
+	JTextField t_price;
+	Canvas can_regist;	
+	JButton bt_find;//파일 탐색기 띄우기
+	JButton bt_regist;//등록 버튼
+	
+	ArrayList top_list=new ArrayList();//상위카테고리의 pk 담을 배열 !!!
+	ArrayList sub_list=new ArrayList();//하위카테고리의 pk 담을 배열 !!!
+	JFileChooser chooser;
+	Image regist_img;
+	String regist_path; //등록시 사용한 이미지 경로
+	String imgName;
+	
+	//jtable 관련 
+	ProductTableModel model;
+	JTable table;
+	JScrollPane scroll;
+	
+	//상세보기 관련 
+	Choice ch_top2;//상위 카테고리 
+	Choice ch_sub2;//하위 카테고리 
+	JTextField t_name2;
+	JTextField t_price2;
+	Canvas can_regist2;	
+	JButton bt_find2;//파일 탐색기 띄우기
+	JButton bt_edit;//수정 버튼
+	JButton bt_del;//삭제 버튼
+
+	
+	
+	public ProductMain(Main main) {
+		this.main=main;
+		p_west  = new JPanel();
+		p_east  = new JPanel();
+		ch_top = new Choice();
+		ch_sub = new Choice();
+		t_name = new JTextField();
+		t_price = new JTextField();
+		can_regist = new Canvas() {
+			public void paint(Graphics g) {
+				//그림 그리기!!!
+				//g.setColor(Color.RED);
+				//g.fillRect(0, 0,145, 145);
+				g.drawImage(regist_img, 0, 0, 145, 145, null);
+			}
+		};
+		bt_find = new JButton("파일찾기");
+		bt_regist = new JButton("등록하기");
+		chooser = new JFileChooser("D:/java_developer/javascript/res");
+		table = new JTable();
+		scroll = new JScrollPane(table);
+		
+		//테이블의 row 높이 키우기!!!
+		table.setRowHeight(65);
+		
+		//상세보기 관련 
+		ch_top2 = new Choice();
+		ch_sub2 = new Choice();
+		t_name2 = new JTextField();
+		t_price2 = new JTextField();
+		can_regist2 = new Canvas() {
+			public void paint(Graphics g) {
+				//그림 그리기!!!
+				//g.setColor(Color.RED);
+				//g.fillRect(0, 0,145, 145);
+				g.drawImage(regist_img, 0, 0, 145, 145, null);
+			}
+		};
+		bt_find2 = new JButton("파일찾기");
+		bt_edit = new JButton("수정하기");		
+		bt_del = new JButton("삭제하기");		
+		
+		//부착!!!
+		Dimension d = new Dimension(145,25);
+		ch_top.setPreferredSize(d);
+		ch_sub.setPreferredSize(d);
+		t_name.setPreferredSize(d);
+		t_price.setPreferredSize(d);
+		can_regist.setPreferredSize(new Dimension(145, 145));
+		bt_find.setPreferredSize(d);
+		bt_regist.setPreferredSize(d);
+		
+		//상세보기관련
+		ch_top2.setPreferredSize(d);
+		ch_sub2.setPreferredSize(d);
+		t_name2.setPreferredSize(d);
+		t_price2.setPreferredSize(d);
+		can_regist2.setPreferredSize(new Dimension(145, 145));
+		bt_find2.setPreferredSize(d);
+		bt_edit.setPreferredSize(d);
+		bt_del.setPreferredSize(d);
+		
+		p_west.add(ch_top);
+		p_west.add(ch_sub);
+		p_west.add(t_name);
+		p_west.add(t_price);
+		p_west.add(can_regist);
+		p_west.add(bt_find);
+		p_west.add(bt_regist);
+		p_west.setPreferredSize(new Dimension(170, 600));
+		
+		//상세보기 관련
+		p_east.add(ch_top2);
+		p_east.add(ch_sub2);
+		p_east.add(t_name2);
+		p_east.add(t_price2);
+		p_east.add(can_regist2);
+		p_east.add(bt_find2);
+		p_east.add(bt_edit);
+		p_east.add(bt_del);
+		p_east.setPreferredSize(new Dimension(170, 600));
+		
+		//현재 패널을 BorderLayout 으로 전환 
+		this.setLayout(new BorderLayout());
+		add(p_west, BorderLayout.WEST);
+		add(p_east, BorderLayout.EAST);
+		add(scroll);//table을 센터에!!
+		
+		this.setBackground(Color.WHITE);
+		setPreferredSize(new Dimension(1200, 600));
+		
+		//ch_top 초이스 컴포넌트에 리스너 연결 
+		ch_top.addItemListener(new ItemListener() {
+			public void itemStateChanged(ItemEvent e) {
+				int index=ch_top.getSelectedIndex();//유저가 선택한 초이스의 번째
+				Integer obj=(Integer)top_list.get(index);
+				getSubList(obj);
+			}
+		});
+		
+		//버튼과 리스너 연결
+		bt_find.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				openFile();
+			}
+		});
+		
+		//버튼과 리스너 연결
+		bt_regist.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				upload();
+				regist();
+			}
+		});
+		
+		//초이스 컴포넌트에 값 채우기 
+		getTopList();
+		
+		//table과 모델 연결!!
+		table.setModel(model=new ProductTableModel());
+		selectAll();
+	}
+	
+	//최상위 카테고리 구하기
+	public void getTopList() {
+		Connection con=main.getCon();
+		PreparedStatement pstmt=null;
+		ResultSet rs=null;
+		
+		try {
+			String sql="select * from topcategory";
+			pstmt=con.prepareStatement(sql);
+			rs=pstmt.executeQuery();
+			//rs의 값에서 choice로 옮기기!!
+			
+			while(rs.next()) {
+				ch_top.add(rs.getString("name"));
+				//pk도 보관하자!!
+				//getInt 는 int 형을반환하고, add메서드는 Object형을 인수로
+				//넣어야 하므로, 원래 형이 맞지 않아 에러가 났어야 하는데, 자바
+				//에서는 기본자료형과 레퍼클래스가 자동 형변환을 지원한다..
+				//이런 현상을가리켜 boxing!!!  int --> Integer(autoboxing)
+				//Integer --> int (unboxing)
+				top_list.add(rs.getInt("topcategory_id"));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally {
+			if(rs!=null) {
+				try {
+					rs.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			if(pstmt!=null) {
+				try {
+					pstmt.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+	}
+	
+	//하위 카테고리 구하기
+	public void getSubList(int topcategory_id) {
+		Connection con=main.getCon();
+		PreparedStatement pstmt=null;
+		ResultSet rs=null;
+		
+		String sql="select * from subcategory where topcategory_id="+topcategory_id;
+		System.out.println(sql);
+		try {
+			pstmt=con.prepareStatement(sql);
+			rs=pstmt.executeQuery();
+			
+			//기존 아이템 싹!!!! 지우기 
+			ch_sub.removeAll();
+			sub_list.removeAll(sub_list);
+			
+			while(rs.next()) {
+				//ch_sub에 값 채우기!!
+				ch_sub.add(rs.getString("name"));
+				sub_list.add(rs.getInt("subcategory_id"));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally {
+			if(rs!=null) {
+				try {
+					rs.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			if(pstmt!=null) {
+				try {
+					pstmt.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+	}
+	
+	//파일 찾기 메서드 정의 
+	public void openFile() {
+		int result=chooser.showOpenDialog(this);
+		if(result ==JFileChooser.APPROVE_OPTION) {
+			//선택한 파일을 반환 받아서!!
+			File file=chooser.getSelectedFile();
+			regist_path=file.getAbsolutePath();
+			System.out.println(file.getAbsolutePath());
+			ImageIcon icon=new ImageIcon(file.getAbsolutePath());
+			regist_img=icon.getImage();
+			can_regist.repaint();
+		}
+	}
+	
+	//이미지 특정 위치로 복사 ( 웹이었다면 업로드 불린다)
+	public void upload() {
+		//data 폴더로 복사하기!!!
+		FileInputStream fis=null;
+		FileOutputStream fos=null;
+		imgName=System.currentTimeMillis()+"."+StringUtil.getExt(regist_path);
+		
+		try {
+			fis=new FileInputStream(regist_path);
+			fos=new FileOutputStream("D:/java_developer/javaSE/Shop/data/"+imgName);
+			
+			byte[] b=new byte[1024];
+			int data=-1;
+			while(true) {
+				data=fis.read(b);//입력
+				if(data==-1)break;
+				fos.write(b);//출력
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}finally {
+			if(fos !=null) {
+				try {
+					fos.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			if(fis !=null) {
+				try {
+					fis.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+	}
+	
+	public void regist() {
+		Connection con=main.getCon();
+		PreparedStatement pstmt=null;
+		int index=ch_sub.getSelectedIndex();
+		int subcategory_id=(Integer)sub_list.get(index);
+		String name=t_name.getText();
+		String price=t_price.getText();
+		//로직~~~~
+		
+		String sql="insert into product(product_id,subcategory_id,product_name,price,img)";
+		sql+=" values(seq_product.nextval,"+subcategory_id+" , '"+name+"', "+price+",'"+imgName+"')"; 
+		System.out.println(sql);
+		
+		try {
+			pstmt=con.prepareStatement(sql);
+			int result=pstmt.executeUpdate();
+			if(result ==0) {
+				JOptionPane.showMessageDialog(this, "등록실패");
+			}else {
+				JOptionPane.showMessageDialog(this, "등록성공");
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally {
+			if(pstmt!=null) {
+				try {
+					pstmt.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+	}
+	
+	//모든 상품 가져오기!! (카테고리와 상품테이블의 조인!!)
+	public void selectAll() {
+		Connection con=main.getCon();
+		PreparedStatement pstmt=null;
+		ResultSet rs=null;
+		
+		StringBuffer sb=new StringBuffer();
+		sb.append("select t.topcategory_id,t.name as top_name");
+		sb.append(", s.subcategory_id, s.name as sub_name");
+		sb.append(", product_id, product_name, price ,img ");
+		sb.append(" from topcategory t, subcategory s, product p");
+		sb.append(" where t.topcategory_id=s.topcategory_id");
+		sb.append(" and s.subcategory_id=p.subcategory_id");
+		
+		System.out.println(sb.toString());
+		
+		try {
+			//스크롤 가능한 rs 로 지원하기 !!!
+			pstmt=con.prepareStatement(sb.toString(),ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			rs=pstmt.executeQuery();
+			rs.last();//마지막 레코드로 보내기!!
+			int total=rs.getRow();//현재 rs가 위치한 레코드 번호
+			
+			//rs를 이용하여 이차원배열을 생성 
+			Object[][] data=new Object[total][model.columnTitle.length];
+			rs.beforeFirst();//원위치
+			
+			for(int i=0;i<total;i++) {
+				rs.next();
+				data[i][1]=rs.getInt("product_id");//고유코드 product_id
+				data[i][2]=rs.getString("img");
+				data[i][3]=rs.getString("top_name");
+				data[i][4]=rs.getString("sub_name");
+				data[i][5]=rs.getString("product_name");
+				data[i][6]=rs.getString("price");
+			}
+			//model의 이차원배열을 방금 만들어진 배열로 대체!!
+			model.data=data;
+			table.updateUI();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally {
+			if(rs!=null) {
+				try {
+					rs.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			if(pstmt!=null) {
+				try {
+					pstmt.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+	}
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
