@@ -10,6 +10,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -165,7 +167,16 @@ public class ProductMain extends JPanel{
 			public void itemStateChanged(ItemEvent e) {
 				int index=ch_top.getSelectedIndex();//유저가 선택한 초이스의 번째
 				Integer obj=(Integer)top_list.get(index);
-				getSubList(obj);
+				getSubList(obj,ch_sub);
+			}
+		});
+		
+		//ch_top 초이스 컴포넌트에 리스너 연결 
+		ch_top2.addItemListener(new ItemListener() {
+			public void itemStateChanged(ItemEvent e) {
+				int index=ch_top2.getSelectedIndex();//유저가 선택한 초이스의 번째
+				Integer obj=(Integer)top_list.get(index);
+				getSubList(obj,ch_sub2);
 			}
 		});
 		
@@ -181,6 +192,13 @@ public class ProductMain extends JPanel{
 			public void actionPerformed(ActionEvent e) {
 				upload();
 				regist();
+			}
+		});
+		
+		//테이블과 리스너 연결 
+		table.addMouseListener(new MouseAdapter() {
+			public void mouseClicked(MouseEvent e) {
+				
 			}
 		});
 		
@@ -206,6 +224,7 @@ public class ProductMain extends JPanel{
 			
 			while(rs.next()) {
 				ch_top.add(rs.getString("name"));
+				ch_top2.add(rs.getString("name"));
 				//pk도 보관하자!!
 				//getInt 는 int 형을반환하고, add메서드는 Object형을 인수로
 				//넣어야 하므로, 원래 형이 맞지 않아 에러가 났어야 하는데, 자바
@@ -236,7 +255,7 @@ public class ProductMain extends JPanel{
 	}
 	
 	//하위 카테고리 구하기
-	public void getSubList(int topcategory_id) {
+	public void getSubList(int topcategory_id, Choice choice) {
 		Connection con=main.getCon();
 		PreparedStatement pstmt=null;
 		ResultSet rs=null;
@@ -248,12 +267,12 @@ public class ProductMain extends JPanel{
 			rs=pstmt.executeQuery();
 			
 			//기존 아이템 싹!!!! 지우기 
-			ch_sub.removeAll();
+			choice.removeAll();
 			sub_list.removeAll(sub_list);
 			
 			while(rs.next()) {
 				//ch_sub에 값 채우기!!
-				ch_sub.add(rs.getString("name"));
+				choice.add(rs.getString("name"));
 				sub_list.add(rs.getInt("subcategory_id"));
 			}
 		} catch (SQLException e) {
