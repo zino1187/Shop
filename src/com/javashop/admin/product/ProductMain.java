@@ -17,6 +17,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -70,6 +71,8 @@ public class ProductMain extends JPanel{
 	JButton bt_edit;//수정 버튼
 	JButton bt_del;//삭제 버튼
 	URL url;
+	int product_id; //현재 선택된 상품의 pk
+	String img;//현재 선택된 상품의 이미지
 	
 	public ProductMain(Main main) {
 		this.main=main;
@@ -196,14 +199,32 @@ public class ProductMain extends JPanel{
 			}
 		});
 		
+		//삭제 버튼과 리스너 연결
+		bt_del.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if(product_id==0) {
+					JOptionPane.showMessageDialog(main, "삭제하실 상품을 선택하세요");
+					return;
+				}
+				
+				if(JOptionPane.showConfirmDialog(main, "삭제하시겠습니까?")==JOptionPane.OK_OPTION) {
+					deleteFile();//파일먼저 지우고
+					//delete();//db 지우기
+				}
+			}
+		});
+		
 		//테이블과 리스너 연결 
 		table.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
 				int row=table.getSelectedRow();
 				int col=1;
 				//System.out.println(table.getValueAt(row, col));
-				int product_id=(Integer)table.getValueAt(row, col);
-				getDetail(product_id);
+				product_id=(Integer)table.getValueAt(row, col);
+				img=(String)table.getValueAt(row, 2);
+				String top_name=(String)table.getValueAt(row, 3);
+				String sub_name=(String)table.getValueAt(row, 4);
+				getDetail(product_id, top_name, sub_name);
 			}
 		});
 		
@@ -453,14 +474,14 @@ public class ProductMain extends JPanel{
 		
 	}
 	
-	public void getDetail(int product_id) {
+	public void getDetail(int product_id, String top_name, String sub_name) {
 		Connection con=main.getCon();
 		PreparedStatement pstmt=null;
 		ResultSet rs=null;
-		System.out.println("당신이 보게될 상품의 id="+product_id);
+		System.out.println("당신이 보게될 상품의 id="+product_id+",상위 카테고리명은"+top_name);
 		
 		StringBuffer sb = new StringBuffer();
-		sb.append("select s.subcategory_id, s.topcategory_id");
+		sb.append("select s.subcategory_id as subcategory_id, s.topcategory_id as topcategory_id");
 		sb.append(", product_id, product_name, price");
 		sb.append(",img from subcategory s, product p");
 		sb.append(" where s.subcategory_id=p.subcategory_id");
@@ -473,6 +494,21 @@ public class ProductMain extends JPanel{
 			rs=pstmt.executeQuery();
 			
 			if(rs.next()) {//한건이기는 하지만, 커서를 내려야 한다..
+				//상위 카테고리 선택되게 처리!!!
+				for(int i=0;i<top_list.size();i++) {
+					if(ch_top2.getItem(i).equals(top_name)) {
+						System.out.println(i+"번째에서 일치합니다");
+						ch_top2.select(i);
+						getSubList((int)top_list.get(i),ch_sub2);
+					}
+				}
+				//하위 카테고리가 선택되어 있게 처리...
+				for(int i=0;i<sub_list.size();i++) {
+					if(ch_sub2.getItem(i).equals(sub_name)) {
+						ch_sub2.select(i);
+					}
+				}
+				
 				t_name2.setText(rs.getString("product_name"));//상품명
 				t_price2.setText(rs.getString("price"));
 				url = this.getClass().getClassLoader().getResource(rs.getString("img"));
@@ -485,7 +521,45 @@ public class ProductMain extends JPanel{
 		}
 		
 	}
+	
+	//이미지 삭제 메서드
+	public void deleteFile(){
+		try {
+			File file=new File(url.toURI());
+			System.out.println(file.getAbsolutePath());
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+		
+		System.out.println(img+" 를 삭제할래요?");
+	}
+	
+	//선택된 , 데이터 한건 삭제
+	public void delete() {
+		Connection con=main.getCon();
+		PreparedStatement pstmt=null;
+		
+		String sql="delete from product where product_id="+product_id;
+		System.out.println(sql);
+		try {
+			pstmt=con.prepareStatement(sql);
+			
+			//DML 수행에 의해 영향을 받은 레코드 수를 반환
+			int result=pstmt.executeUpdate();
+			if(result==0) {
+				JOptionPane.showMessageDialog(this,"삭제실패");
+			}else{
+				JOptionPane.showMessageDialog(this,"삭제성공");
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
 }
+
+
+
+
 
 
 
