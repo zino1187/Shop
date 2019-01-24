@@ -198,7 +198,11 @@ public class ProductMain extends JPanel{
 		//테이블과 리스너 연결 
 		table.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
-				
+				int row=table.getSelectedRow();
+				int col=1;
+				//System.out.println(table.getValueAt(row, col));
+				int product_id=(Integer)table.getValueAt(row, col);
+				getDetail(product_id);
 			}
 		});
 		
@@ -447,6 +451,21 @@ public class ProductMain extends JPanel{
 		
 	}
 	
+	public void getDetail(int product_id) {
+		Connection con;
+		PreparedStatement pstmt=null;
+		ResultSet rs=null;
+		System.out.println("당신이 보게될 상품의 id="+product_id);
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append("select s.subcategory_id, s.topcategory_id");
+		sb.append(", product_id, product_name, price");
+		sb.append(",img from subcategory s, product p");
+		sb.append(" where s.subcategory_id=p.subcategory_id");
+		sb.append(" and product_id="+product_id);
+		
+		System.out.println(sb.toString());
+	}
 }
 
 
