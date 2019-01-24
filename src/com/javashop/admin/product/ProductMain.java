@@ -452,7 +452,7 @@ public class ProductMain extends JPanel{
 	}
 	
 	public void getDetail(int product_id) {
-		Connection con;
+		Connection con=main.getCon();
 		PreparedStatement pstmt=null;
 		ResultSet rs=null;
 		System.out.println("당신이 보게될 상품의 id="+product_id);
@@ -465,6 +465,14 @@ public class ProductMain extends JPanel{
 		sb.append(" and product_id="+product_id);
 		
 		System.out.println(sb.toString());
+		
+		try {
+			pstmt=con.prepareStatement(sb.toString());
+			rs=pstmt.executeQuery();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
 	}
 }
 
