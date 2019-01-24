@@ -187,7 +187,13 @@ public class ProductMain extends JPanel{
 		//버튼과 리스너 연결
 		bt_find.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				openFile();
+				openFile(can_regist);
+			}
+		});
+		//버튼과 리스너 연결
+		bt_find2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				openFile(can_regist2);
 			}
 		});
 		
@@ -226,13 +232,13 @@ public class ProductMain extends JPanel{
 				if(JOptionPane.showConfirmDialog(main, "수정하시겠습니까?")==JOptionPane.OK_OPTION) {
 					//상세보기의 이미지명과, 우측영역의 파일찾기에 의해
 					//선택된 이미지명이 다르다면, 이 사람은 사진교체를 희망..
-					System.out.println("imgName "+imgName);
-					
-					if(imgName !=null){
+					if(regist_img2 !=null){
 						System.out.println("저 파일교체 원해요!!");
+						upload();//원할때만...
 					}
-					//upload();//원할때만...
 					edit();
+					selectAll();
+					table.updateUI();
 				}
 			}
 		});
@@ -346,7 +352,7 @@ public class ProductMain extends JPanel{
 	}
 	
 	//파일 찾기 메서드 정의 
-	public void openFile() {
+	public void openFile(Canvas can) {
 		int result=chooser.showOpenDialog(this);
 		if(result ==JFileChooser.APPROVE_OPTION) {
 			//선택한 파일을 반환 받아서!!
@@ -355,7 +361,11 @@ public class ProductMain extends JPanel{
 			System.out.println(file.getAbsolutePath());
 			ImageIcon icon=new ImageIcon(file.getAbsolutePath());
 			regist_img=icon.getImage();
-			can_regist.repaint();
+			System.out.println("regist_img2"+regist_img2);
+			regist_img2=regist_img;
+			can.repaint();//누가 다시 그려질지 변수로 설정!!
+			img=file.getName();
+			JOptionPane.showMessageDialog(main,"당신이 수정할 이미지명은"+img);
 		}
 	}
 	
@@ -585,6 +595,46 @@ public class ProductMain extends JPanel{
 	public void edit() {
 		Connection con=main.getCon();
 		PreparedStatement pstmt=null;
+		
+		//쿼리문 수행시, 바인드 변수를 사용하면 성능 향상된다!!
+		//바인드 변수는 쿼리문의 컴파일과 관련하여 성능을향상시키기
+		//위한 용도였다..바인드 변수를 지원하는 쿼리문 수행객체가
+		//바로 PreparedStatement 이다!!
+		StringBuffer sb = new StringBuffer();
+		sb.append("update product set subcategory_id=?");
+		sb.append(", product_name=?");
+		sb.append(", price=?");
+		sb.append(", img=?");
+		sb.append(" where product_id=?");
+		
+		try {
+			pstmt=con.prepareStatement(sb.toString());
+			//물음표로 대체했던 바인드 변수값을 결정지어야 한다!!
+			
+			  pstmt.setInt(1, (int)sub_list.get(ch_sub2.getSelectedIndex()));//subcategory_id
+			  pstmt.setString(2, t_name2.getText());
+			  pstmt.setInt(3, Integer.parseInt(t_price2.getText()));
+			  pstmt.setString(4, img); 
+			  pstmt.setInt(5, product_id);
+			  
+			  int result=pstmt.executeUpdate();//쿼리실행!!
+			  if(result >0) {
+				  JOptionPane.showMessageDialog(this, "수정성공");
+			  }else {
+				  JOptionPane.showMessageDialog(this, "수정실패");
+			  }
+			  
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally {
+			if(pstmt!=null) {
+				try {
+					pstmt.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 		
 		
 	}
