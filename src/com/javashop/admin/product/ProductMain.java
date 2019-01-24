@@ -208,8 +208,31 @@ public class ProductMain extends JPanel{
 				}
 				
 				if(JOptionPane.showConfirmDialog(main, "삭제하시겠습니까?")==JOptionPane.OK_OPTION) {
-					deleteFile();//파일먼저 지우고
-					//delete();//db 지우기
+					if(deleteFile()) {//파일먼저 지우고
+						delete();//db 지우기
+						selectAll();
+						table.updateUI();
+						//켄버스 업데이트!!
+						regist_img2=null;
+						can_regist2.repaint();
+					}
+				}
+			}
+		});
+		
+		//수정 버튼과 리스너 연결
+		bt_edit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if(JOptionPane.showConfirmDialog(main, "수정하시겠습니까?")==JOptionPane.OK_OPTION) {
+					//상세보기의 이미지명과, 우측영역의 파일찾기에 의해
+					//선택된 이미지명이 다르다면, 이 사람은 사진교체를 희망..
+					System.out.println("imgName "+imgName);
+					
+					if(imgName !=null){
+						System.out.println("저 파일교체 원해요!!");
+					}
+					//upload();//원할때만...
+					edit();
 				}
 			}
 		});
@@ -523,15 +546,17 @@ public class ProductMain extends JPanel{
 	}
 	
 	//이미지 삭제 메서드
-	public void deleteFile(){
+	public boolean deleteFile(){
+		boolean result=false;//성공여부를 담는 변수
+		System.out.println(img+" 를 삭제할래요?");
 		try {
 			File file=new File(url.toURI());
+			result=file.delete();
 			System.out.println(file.getAbsolutePath());
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}
-		
-		System.out.println(img+" 를 삭제할래요?");
+		return result;
 	}
 	
 	//선택된 , 데이터 한건 삭제
@@ -554,6 +579,14 @@ public class ProductMain extends JPanel{
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	//수정 메서드 정의 
+	public void edit() {
+		Connection con=main.getCon();
+		PreparedStatement pstmt=null;
+		
+		
 	}
 }
 
