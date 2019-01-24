@@ -17,6 +17,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -50,7 +51,7 @@ public class ProductMain extends JPanel{
 	ArrayList top_list=new ArrayList();//상위카테고리의 pk 담을 배열 !!!
 	ArrayList sub_list=new ArrayList();//하위카테고리의 pk 담을 배열 !!!
 	JFileChooser chooser;
-	Image regist_img;
+	Image regist_img,regist_img2;
 	String regist_path; //등록시 사용한 이미지 경로
 	String imgName;
 	
@@ -68,8 +69,7 @@ public class ProductMain extends JPanel{
 	JButton bt_find2;//파일 탐색기 띄우기
 	JButton bt_edit;//수정 버튼
 	JButton bt_del;//삭제 버튼
-
-	
+	URL url;
 	
 	public ProductMain(Main main) {
 		this.main=main;
@@ -106,12 +106,13 @@ public class ProductMain extends JPanel{
 				//그림 그리기!!!
 				//g.setColor(Color.RED);
 				//g.fillRect(0, 0,145, 145);
-				g.drawImage(regist_img, 0, 0, 145, 145, null);
+				g.drawImage(regist_img2, 0, 0, 145, 145, null);
 			}
 		};
 		bt_find2 = new JButton("파일찾기");
 		bt_edit = new JButton("수정하기");		
-		bt_del = new JButton("삭제하기");		
+		bt_del = new JButton("삭제하기");	
+		
 		
 		//부착!!!
 		Dimension d = new Dimension(145,25);
@@ -375,6 +376,7 @@ public class ProductMain extends JPanel{
 				JOptionPane.showMessageDialog(this, "등록실패");
 			}else {
 				JOptionPane.showMessageDialog(this, "등록성공");
+				selectAll();
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -469,6 +471,15 @@ public class ProductMain extends JPanel{
 		try {
 			pstmt=con.prepareStatement(sb.toString());
 			rs=pstmt.executeQuery();
+			
+			if(rs.next()) {//한건이기는 하지만, 커서를 내려야 한다..
+				t_name2.setText(rs.getString("product_name"));//상품명
+				t_price2.setText(rs.getString("price"));
+				url = this.getClass().getClassLoader().getResource(rs.getString("img"));
+				ImageIcon icon=new ImageIcon(url);
+				regist_img2=icon.getImage();
+				can_regist2.repaint();
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
