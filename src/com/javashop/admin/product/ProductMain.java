@@ -73,6 +73,8 @@ public class ProductMain extends JPanel{
 	URL url;
 	int product_id; //현재 선택된 상품의 pk
 	String img;//현재 선택된 상품의 이미지
+	String userData="C:/Users/itbank510/java_developer/data";
+	File file;
 	
 	public ProductMain(Main main) {
 		this.main=main;
@@ -356,7 +358,7 @@ public class ProductMain extends JPanel{
 		int result=chooser.showOpenDialog(this);
 		if(result ==JFileChooser.APPROVE_OPTION) {
 			//선택한 파일을 반환 받아서!!
-			File file=chooser.getSelectedFile();
+			file=chooser.getSelectedFile();
 			regist_path=file.getAbsolutePath();
 			System.out.println(file.getAbsolutePath());
 			ImageIcon icon=new ImageIcon(file.getAbsolutePath());
@@ -364,7 +366,7 @@ public class ProductMain extends JPanel{
 			System.out.println("regist_img2"+regist_img2);
 			regist_img2=regist_img;
 			can.repaint();//누가 다시 그려질지 변수로 설정!!
-			img=file.getName();
+			img=System.currentTimeMillis()+"."+StringUtil.getExt(regist_path);
 			JOptionPane.showMessageDialog(main,"당신이 수정할 이미지명은"+img);
 		}
 	}
@@ -374,11 +376,12 @@ public class ProductMain extends JPanel{
 		//data 폴더로 복사하기!!!
 		FileInputStream fis=null;
 		FileOutputStream fos=null;
-		imgName=System.currentTimeMillis()+"."+StringUtil.getExt(regist_path);
+		//imgName=System.currentTimeMillis()+"."+StringUtil.getExt(regist_path);
 		
 		try {
 			fis=new FileInputStream(regist_path);
-			fos=new FileOutputStream("D:/java_developer/javaSE/Shop/data/"+imgName);
+			fos=new FileOutputStream(userData+File.separator+img);
+			System.out.println("C:/Users/itbank510/java_developer/data"+File.separator+img);
 			
 			byte[] b=new byte[1024];
 			int data=-1;
@@ -420,7 +423,7 @@ public class ProductMain extends JPanel{
 		//로직~~~~
 		
 		String sql="insert into product(product_id,subcategory_id,product_name,price,img)";
-		sql+=" values(seq_product.nextval,"+subcategory_id+" , '"+name+"', "+price+",'"+imgName+"')"; 
+		sql+=" values(seq_product.nextval,"+subcategory_id+" , '"+name+"', "+price+",'"+img+"')"; 
 		System.out.println(sql);
 		
 		try {
@@ -544,8 +547,8 @@ public class ProductMain extends JPanel{
 				
 				t_name2.setText(rs.getString("product_name"));//상품명
 				t_price2.setText(rs.getString("price"));
-				url = this.getClass().getClassLoader().getResource(rs.getString("img"));
-				ImageIcon icon=new ImageIcon(url);
+				
+				ImageIcon icon=new ImageIcon(userData+File.separator+rs.getString("img"));
 				regist_img2=icon.getImage();
 				can_regist2.repaint();
 			}
@@ -559,13 +562,9 @@ public class ProductMain extends JPanel{
 	public boolean deleteFile(){
 		boolean result=false;//성공여부를 담는 변수
 		System.out.println(img+" 를 삭제할래요?");
-		try {
-			File file=new File(url.toURI());
-			result=file.delete();
-			System.out.println(file.getAbsolutePath());
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
+		File file=new File(userData+File.separator+img);
+		result=file.delete();
+		System.out.println(file.getAbsolutePath());
 		return result;
 	}
 	
